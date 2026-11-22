@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DriveOddsBench: Are Driving Video World Models Aligned with Real-World Odds?</title>
+<meta name="description" content="DriveOddsBench tests whether the futures sampled by driving video world models are aligned with real-world odds, using one recorded future per history.">
+<link rel="canonical" href="https://hhjj233.github.io/DriveOddsBench-page/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="DriveOddsBench: Are Driving Video World Models Aligned with Real-World Odds?">
+<meta property="og:description" content="On real driving footage, none of eleven video world models is aligned with real-world odds, and every one underestimates its uncertainty.">
+<meta property="og:image" content="https://hhjj233.github.io/DriveOddsBench-page/static/images/teaser.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='11' fill='%230f172a'/%3E%3Cpath d='M10 45 21 9M38 45 27 9' stroke='%23475569' stroke-width='2.2' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='12' r='1.6' fill='%2394a3b8'/%3E%3Ccircle cx='24' cy='16.5' r='1.8' fill='%2394a3b8'/%3E%3Ccircle cx='24' cy='21.5' r='2' fill='%23cbd5e1'/%3E%3Ccircle cx='24' cy='27' r='2.2' fill='%23e2e8f0'/%3E%3Ccircle cx='24' cy='37' r='3.2' fill='%23ea580c'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans:400,500,700|Noto+Sans:400,500,700|Noto+Sans+Mono:400&display=swap">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+<style>
+:root {
+  --bg: #ffffff; --bg-alt: #f6f7f9; --card: #ffffff; --ink: #3a3f45; --ink-strong: #1d2126; --muted: #5f6873; --faint: #8a929c;
+  --line: #e4e7eb; --chip: #f1f3f5; --btn: #2f3236; --btn-ink: #ffffff; --btn-hover: #111315;
+  --accent: #c2410c; --accent-soft: #fff1e7; --link: #1f5fbf;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 6px 20px rgba(16, 24, 40, 0.07);
+  --display: "Google Sans", "Noto Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --text: "Noto Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "Noto Sans Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1116; --bg-alt: #141820; --card: #161b22; --ink: #c6ced8; --ink-strong: #f0f3f6; --muted: #9aa4b0; --faint: #6f7883;
+    --line: #262c35; --chip: #1d232c; --btn: #e6e8eb; --btn-ink: #111418; --btn-hover: #ffffff;
+    --accent: #fb923c; --accent-soft: #2a1a0f; --link: #8ab8ff;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1116; --bg-alt: #141820; --card: #161b22; --ink: #c6ced8; --ink-strong: #f0f3f6; --muted: #9aa4b0; --faint: #6f7883;
+  --line: #262c35; --chip: #1d232c; --btn: #e6e8eb; --btn-ink: #111418; --btn-hover: #ffffff;
+  --accent: #fb923c; --accent-soft: #2a1a0f; --link: #8ab8ff;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.65 var(--text); -webkit-font-smoothing: antialiased; }
+img { max-width: 100%; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { font-family: var(--display); color: var(--ink-strong); text-wrap: balance; margin: 0; }
+p { margin: 0; }
+.wrap { max-width: 992px; margin-inline: auto; padding-inline: 16px; }
+.wrap.wide { max-width: 1200px; }
+section { padding-block: 56px; }
+.band { background: var(--bg-alt); }
+
+/* hero */
+.hero { padding-block: 64px 28px; text-align: center; }
+.brand { display: inline-flex; align-items: center; gap: 0.3em; font-size: clamp(2.4rem, 6vw, 3.4rem); font-weight: 700; letter-spacing: 0.01em; }
+.brand svg { width: 1.05em; height: 1.05em; border-radius: 0.24em; box-shadow: var(--shadow); flex: none; }
+.paper-title { margin-top: 10px; font-family: var(--display); font-size: clamp(1.35rem, 3.2vw, 1.95rem); line-height: 1.3; color: var(--ink-strong); font-weight: 500; max-width: 860px; margin-inline: auto; text-wrap: balance; }
+.authors { margin-top: 18px; font-family: var(--display); font-size: 1.25rem; color: var(--ink-strong); }
+.authors span { white-space: nowrap; }
+.affil { margin-top: 4px; font-family: var(--display); font-size: 1.08rem; color: var(--muted); }
+.note { margin-top: 4px; font-size: 0.86rem; color: var(--faint); }
+.links { margin-top: 22px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.btn { display: inline-flex; align-items: center; gap: 0.5em; padding: 0.52em 1.15em; border-radius: 999px; background: var(--btn); color: var(--btn-ink); font: 500 1rem/1.2 var(--display); border: 0; cursor: pointer; transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease; }
+.btn:hover { text-decoration: none; background: var(--btn-hover); transform: translateY(-1px); box-shadow: var(--shadow); }
+.btn svg, .btn i { width: 1em; }
+.btn.soon { opacity: 0.55; cursor: default; }
+.btn.soon:hover { transform: none; box-shadow: none; background: var(--btn); }
+.btn .tag { font-size: 0.68em; padding: 0.15em 0.55em; border-radius: 999px; border: 1px solid currentColor; opacity: 0.8; }
+
+/* teaser */
+.teaser-sec { padding-block: 8px 48px; }
+.teaser-gif { display: block; margin-inline: auto; width: 100%; max-width: 768px; height: auto; border-radius: 12px; box-shadow: var(--shadow); background: #ffffff; }
+.teaser-cap { margin: 12px auto 0; max-width: 768px; text-align: center; font-size: 0.9rem; color: var(--muted); }
+.lede { margin: 26px auto 0; max-width: 860px; text-align: center; font: 400 1.32rem/1.55 var(--display); color: var(--ink); }
+.lede em { font-style: normal; color: var(--accent); font-weight: 500; }
+
+/* section heads */
+.sec-title { display: flex; align-items: center; justify-content: center; gap: 0.5em; font-size: clamp(1.6rem, 3.4vw, 2rem); font-weight: 500; margin-bottom: 10px; }
+.badge { width: 1.55em; height: 1.55em; border-radius: 0.5em; display: inline-grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-size: 0.72em; flex: none; }
+.sec-sub { text-align: center; color: var(--muted); max-width: 760px; margin: 0 auto 28px; }
+h3.sub { font-size: 1.28rem; font-weight: 500; margin: 44px 0 14px; display: flex; align-items: center; gap: 0.5em; }
+h3.sub .badge { font-size: 0.8em; }
+
+/* highlights */
+.hl { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 18px; }
+.hl li { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 16px; align-items: start; font-size: 1.08rem; }
+.hl .num { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--card); border: 1px solid var(--line); color: var(--accent); box-shadow: var(--shadow); font-size: 1.1rem; }
+.hl b { color: var(--ink-strong); font-family: var(--display); font-weight: 500; }
+.hl em { font-style: normal; color: var(--accent); font-weight: 500; }
+
+/* figures */
+figure { margin: 0; }
+.fig { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; box-shadow: var(--shadow); }
+.fig img { display: block; width: 100%; height: auto; border-radius: 6px; cursor: zoom-in; background: #ffffff; }
+.figcap { margin-top: 10px; font-size: 0.92rem; color: var(--muted); line-height: 1.6; }
+.figcap b { color: var(--ink-strong); font-weight: 500; }
+
+/* steps */
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
+.step { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+.step .k { display: flex; align-items: center; gap: 0.55em; font: 500 0.76rem/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.step .k .badge { font-size: 1.15rem; }
+.step h4 { font-size: 1.06rem; font-weight: 500; }
+.step p { font-size: 0.9rem; color: var(--muted); line-height: 1.55; }
+.step .chip { margin-top: auto; }
+.chip { display: inline-flex; align-items: center; gap: 0.4em; font: 500 0.78rem/1.2 var(--display); padding: 0.35em 0.7em; border-radius: 999px; background: var(--chip); color: var(--ink); width: fit-content; }
+
+/* videos */
+.player { display: grid; gap: 14px; }
+.player + .player { margin-top: 48px; }
+.vhead { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-items: center; }
+.vhead .vn { grid-row: span 2; width: 2.4rem; height: 2.4rem; border-radius: 0.8rem; display: grid; place-items: center; background: var(--btn); color: var(--btn-ink); font: 500 1.15rem/1 var(--display); }
+.vhead h3 { font-size: 1.3rem; font-weight: 500; }
+.vhead p { color: var(--muted); font-size: 0.95rem; }
+.player video { width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; background: #000000; box-shadow: var(--shadow); display: block; border: 1px solid var(--line); }
+
+/* results */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 28px; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.stat .v { font: 500 2rem/1.1 var(--display); color: var(--accent); font-variant-numeric: tabular-nums; }
+.stat .d { font-size: 0.86rem; color: var(--muted); line-height: 1.5; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 9px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+thead th { font: 500 0.82rem/1.3 var(--display); color: var(--muted); background: var(--bg-alt); vertical-align: bottom; }
+thead th small { display: block; font-weight: 400; color: var(--faint); }
+td:first-child { font-family: var(--display); font-weight: 500; color: var(--ink-strong); }
+td.hit { color: var(--accent); font-weight: 600; }
+tbody tr:last-child td { border-bottom: 0; }
+.tnote { margin-top: 10px; font-size: 0.84rem; color: var(--muted); }
+
+/* bibtex */
+.bib { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; overflow-x: auto; }
+.bib pre { margin: 0; font: 0.86rem/1.6 var(--mono); color: var(--ink-strong); white-space: pre; }
+.copy.btn { position: absolute; top: 10px; right: 10px; padding: 0.4em 0.85em; font-size: 0.85rem; }
+
+footer { padding-block: 34px 48px; text-align: center; font-size: 0.85rem; color: var(--faint); border-top: 1px solid var(--line); }
+
+/* lightbox and back to top */
+.lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(8, 10, 14, 0.86); display: grid; place-items: center; padding: 16px; cursor: zoom-out; overflow: auto; }
+.lightbox img { max-width: min(1600px, 100%); background: #fff; border-radius: 8px; }
+.lightbox[hidden] { display: none; }
+#btt { position: fixed; right: 22px; bottom: 22px; width: 46px; height: 46px; border-radius: 12px; border: 0; background: rgba(110, 110, 115, 0.55); color: #fff; display: grid; place-items: center; cursor: pointer; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s, background 0.2s; z-index: 40; font-size: 1.1rem; }
+#btt.show { opacity: 1; visibility: visible; }
+#btt:hover { background: #333; }
+
+@media (max-width: 860px) {
+  .steps { grid-template-columns: minmax(0, 1fr); }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  section { padding-block: 44px; }
+  .hl li { grid-template-columns: 38px minmax(0, 1fr); gap: 12px; font-size: 1rem; }
+  .hl .num { width: 38px; height: 38px; border-radius: 11px; }
+  .lede { font-size: 1.15rem; }
+  .stat .v { font-size: 1.6rem; }
+  .brand { font-size: 2.1rem; }
+  .bib { padding-top: 52px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn, #btt { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="hero wrap">
+  <h1 class="brand">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="11" fill="#0f172a"/><path d="M10 45 21 9M38 45 27 9" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/><circle cx="24" cy="12" r="1.6" fill="#94a3b8"/><circle cx="24" cy="16.5" r="1.8" fill="#94a3b8"/><circle cx="24" cy="21.5" r="2" fill="#cbd5e1"/><circle cx="24" cy="27" r="2.2" fill="#e2e8f0"/><circle cx="24" cy="37" r="3.2" fill="#ea580c"/></svg>
+    DriveOddsBench
+  </h1>
+  <p class="paper-title">Are Driving Video World Models Aligned with Real-World Odds?</p>
+  <p class="authors"><span>Jiaxi Liu</span>, <span>Keshu Wu</span>, <span>Bin Ran</span>, <span>Xiaopeng Li<sup>*</sup></span></p>
+  <p class="affil">Department of Civil and Environmental Engineering, University of Wisconsin–Madison</p>
+  <p class="note"><sup>*</sup>Corresponding author</p>
+  <nav class="links" aria-label="Paper links">
+    <a class="btn soon" aria-disabled="true"><i class="fa-regular fa-file-lines"></i><span>arXiv</span><span class="tag">soon</span></a>
+    <a class="btn" href="https://github.com/hhjj233/DriveOddsBench"><i class="fa-brands fa-github"></i><span>Code</span></a>
+    <a class="btn" href="#videos"><i class="fa-solid fa-circle-play"></i><span>Videos</span></a>
+    <a class="btn" href="#bibtex"><i class="fa-solid fa-quote-right"></i><span>BibTeX</span></a>
+  </nav>
+</header>
+
+<section class="teaser-sec">
+  <div class="wrap">
+    <img class="teaser-gif" src="static/images/teaser_orbis2.gif" width="768" height="322" alt="A test history from Argoverse 2 continued to 4 s: the real future, in which the lead vehicle braked, and five of the 16 futures that Orbis 2 imagines.">
+    <p class="teaser-cap">A test history from Argoverse 2. The lead vehicle braked (red frame), and none of the 16 futures that Orbis 2 imagines did; five are shown.</p>
+    <h2 class="lede">A world model's samples are <em>aligned with real-world odds</em> when each future appears among them as often as it follows the same history in reality. On real driving footage, <em>none of eleven models is aligned</em>, and every one underestimates its uncertainty.</h2>
+  </div>
+</section>
+
+<section class="band" id="highlights">
+  <div class="wrap">
+    <h2 class="sec-title"><span class="badge"><i class="fa-solid fa-star"></i></span>Highlights</h2>
+    <figure class="fig" style="margin-top: 18px;">
+      <img src="static/images/teaser.png" loading="lazy" alt="Teaser: a test history, the futures that Orbis 2 imagines, and the share of real outcomes outside all samples for every model">
+      <figcaption class="figcap"><b>Driving video world models underestimate their uncertainty.</b> (a) A test history from Argoverse 2. (b) The lead vehicle braked, and none of the futures that Orbis 2 imagines did. (c) For every model, the real outcome falls outside all samples far more often than the 11.8% expected when the samples follow the real distribution.</figcaption>
+    </figure>
+    <ol class="hl">
+      <li><span class="num"><i class="fa-solid fa-bullseye"></i></span><p><b>Every model underestimates its uncertainty.</b> The real outcome falls outside all 16 samples in <em>28–61% of cases</em>, 2.4 to 5.2 times the 11.8% expected under alignment, and every spread ratio lies below 1.</p></li>
+      <li><span class="num"><i class="fa-solid fa-scale-unbalanced"></i></span><p><b>Five models are skewed, in opposite directions.</b> Epona and DrivingWorld place the lead vehicle too far ahead, and VaViM, Wan2.1-VACE and Vista too close. The largest skew is in the <em>ego motion</em>.</p></li>
+      <li><span class="num"><i class="fa-solid fa-chart-column"></i></span><p><b>Informative samples can still miss the real distribution.</b> <em>Nine models</em> beat climatology, yet none follows the real distribution, and among these models neither type nor scale predicts which comes closest.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section id="method">
+  <div class="wrap">
+    <h2 class="sec-title"><span class="badge"><i class="fa-solid fa-diagram-project"></i></span>How DriveOddsBench works</h2>
+    <p class="sec-sub">Testing the odds on real driving data is hard for three reasons. DriveOddsBench answers each, and the three answers meet in one pipeline.</p>
+    <figure class="fig">
+      <img src="static/images/pipeline.png" loading="lazy" alt="DriveOddsBench pipeline">
+      <figcaption class="figcap"><b>The pipeline.</b> Each model continues held-out Argoverse 2 histories with 16 futures. One frozen instrument, checked on DEV, reads the same quantities from every imagined future and from the real future after the world model's autoencoder. Ranks pooled over histories give the two pre-registered tests.</figcaption>
+    </figure>
+    <div class="steps">
+      <div class="step"><span class="k"><span class="badge"><i class="fa-solid fa-dice"></i></span>One real future</span><h4>Rank reality among the samples</h4><p>Each recorded history has only one real future, so the true probabilities are unknown. If the samples follow the real distribution, the rank of the real outcome among them is uniform in every history, so pooled ranks test them without probability labels.</p><span class="chip">uniform on {0, …, 16} if aligned</span></div>
+      <div class="step"><span class="k"><span class="badge"><i class="fa-solid fa-ruler"></i></span>Reading from video</span><h4>Read both futures alike</h4><p>Reading errors can look like model errors. One validated instrument reads the same quantities, such as the lead-vehicle gap and the ego motion, from the generated futures and from the real future, which first passes through the world model's autoencoder.</p><span class="chip">one frozen instrument</span></div>
+      <div class="step"><span class="k"><span class="badge"><i class="fa-solid fa-lock"></i></span>Selective reporting</span><h4>Freeze before testing</h4><p>The many possible analyses invite selective reporting. All confirmatory analyses were frozen before any test clip was measured.</p><span class="chip">pre-registered H1 and H2</span></div>
+    </div>
+    <h3 class="sub"><span class="badge"><i class="fa-solid fa-list-check"></i></span>What is tested</h3>
+    <div class="steps" style="margin-top: 0;">
+      <div class="step"><span class="k">H2 · Coverage</span><p>Under alignment the real reading falls outside the range of all 16 samples in 2/17 = 11.8% of cases. More often means that the model underestimates its uncertainty.</p></div>
+      <div class="step"><span class="k">H1 · Skew</span><p>A skewed model places its samples to one side of reality; H1 tests the mean PIT of the lead gap at 4 s.</p></div>
+      <div class="step"><span class="k">Descriptive · Spread ratio</span><p>The mean distance between two samples over the mean distance from a sample to reality is 1 under alignment for any number of samples.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="videos">
+  <div class="wrap">
+    <h2 class="sec-title"><span class="badge"><i class="fa-solid fa-circle-play"></i></span>Watch DriveOddsBench</h2>
+    <p class="sec-sub">Two short videos of about 1.5 minutes each: Part 1 shows the pipeline, and Part 2 works through one test history.</p>
+  </div>
+  <div class="wrap wide">
+    <div class="player">
+      <div class="vhead"><span class="vn">1</span><h3>The pipeline</h3><p>How one recorded future per history tests a world model: 16 imagined futures, the real future through the model's autoencoder, one frozen instrument, the rank of reality, pooled ranks and two pre-registered tests.</p></div>
+      <video controls playsinline preload="metadata" poster="static/videos/poster_pipeline.jpg"><source src="static/videos/DriveOddsBench_1_pipeline.mp4" type="video/mp4"></video>
+    </div>
+    <div class="player">
+      <div class="vhead"><span class="vn">2</span><h3>A use case: the lead car brakes</h3><p>One test history worked through: Orbis 2 imagines 16 futures, the lead car is at least 12.5 m ahead in all of them, and in reality it braked to 7.9 m.</p></div>
+      <video controls playsinline preload="metadata" poster="static/videos/poster_use_case.jpg"><source src="static/videos/DriveOddsBench_2_use_case.mp4" type="video/mp4"></video>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <h2 class="sec-title"><span class="badge"><i class="fa-solid fa-chart-simple"></i></span>Results</h2>
+    <p class="sec-sub">TEST: 200 held-out Argoverse 2 histories in five scenario families, 16 samples per history.</p>
+    <div class="stats">
+      <div class="stat"><span class="v">11</span><span class="d">general and driving world models</span></div>
+      <div class="stat"><span class="v">35,200</span><span class="d">generated futures</span></div>
+      <div class="stat"><span class="v">28–61%</span><span class="d">real outcomes outside all 16 samples, against 11.8% if aligned</span></div>
+      <div class="stat"><span class="v">5 of 11</span><span class="d">models skewed, in opposite directions</span></div>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Model</th><th>Type</th><th>Outside all 16 samples (%)<small>11.8 if aligned</small></th><th>Spread ratio<small>1 if aligned</small></th><th>Lead-gap skew<small>mean PIT − ½</small></th><th>CRPS skill vs. climatology (%)<small>above 0: better</small></th></tr></thead>
+        <tbody>
+          <tr><td>Orbis 2</td><td>driving</td><td>28.0</td><td>0.76</td><td>+0.056</td><td>56</td></tr>
+          <tr><td>Cosmos3-Nano</td><td>general</td><td>29.5</td><td>0.70</td><td>−0.008</td><td>45</td></tr>
+          <tr><td>ReWorld-Video</td><td>driving</td><td>30.2</td><td>0.79</td><td>+0.051</td><td>37</td></tr>
+          <tr><td>Wan2.1-VACE</td><td>general</td><td>40.6</td><td>0.66</td><td class="hit">+0.177</td><td>34</td></tr>
+          <tr><td>DrivingWorld</td><td>driving</td><td>42.4</td><td>0.63</td><td class="hit">−0.169</td><td>18</td></tr>
+          <tr><td>Cosmos3-Edge</td><td>general</td><td>43.8</td><td>0.67</td><td>−0.066</td><td>6</td></tr>
+          <tr><td>Epona</td><td>driving</td><td>49.5</td><td>0.57</td><td class="hit">−0.238</td><td>26</td></tr>
+          <tr><td>LTX-2.5</td><td>general</td><td>50.2</td><td>0.50</td><td>−0.039</td><td>30</td></tr>
+          <tr><td>Vista</td><td>driving</td><td>51.2</td><td>0.49</td><td class="hit">+0.120</td><td>−17</td></tr>
+          <tr><td>VaViM</td><td>driving</td><td>54.5</td><td>0.36</td><td class="hit">+0.249</td><td>−30</td></tr>
+          <tr><td>DriveLaW-Video</td><td>driving</td><td>61.2</td><td>0.42</td><td>+0.072</td><td>12</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">Sorted by the outside rate (H2). Orange: confirmed skew (H1). A positive skew means that the generated lead gaps are too small, a negative skew that they are too large.</p>
+
+    <h3 class="sub"><span class="badge"><i class="fa-solid fa-bullseye"></i></span>Coverage: reality falls outside all samples too often</h3>
+    <figure class="fig">
+      <img src="static/images/rank_histograms.png" loading="lazy" alt="Rank histograms of the eleven models">
+      <figcaption class="figcap"><b>Rank histograms</b> pooled over the primary quantities. Dashed: 1/17, the value under alignment. Terracotta: ranks 0 and 16, where the real outcome lies outside all samples.</figcaption>
+    </figure>
+
+    <h3 class="sub"><span class="badge"><i class="fa-solid fa-scale-unbalanced"></i></span>Skew: five models are skewed, in opposite directions</h3>
+    <figure class="fig">
+      <img src="static/images/skew_profile.png" loading="lazy" alt="Skew of every tested quantity">
+      <figcaption class="figcap"><b>Skew of every tested quantity.</b> Mean PIT − ½ (×100) for every quantity tested for more than two models. + means generated values are too small, − too large. The ego motion shows the largest skew.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="band" id="bibtex">
+  <div class="wrap">
+    <h2 class="sec-title"><span class="badge"><i class="fa-solid fa-quote-right"></i></span>BibTeX</h2>
+    <div class="bib">
+      <button class="btn copy" type="button" id="copybib"><i class="fa-regular fa-copy"></i><span>Copy</span></button>
+<pre id="bibtext">@article{liu2026driveoddsbench,
+  title   = {DriveOddsBench: Are Driving Video World Models Aligned with Real-World Odds?},
+  author  = {Liu, Jiaxi and Wu, Keshu and Ran, Bin and Li, Xiaopeng},
+  journal = {arXiv preprint},
+  year    = {2026}
+}</pre>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <p>Video frames: Argoverse 2 (CC BY-NC-SA 4.0). Code: MIT License.</p>
+</footer>
+
+<div class="lightbox" id="lightbox" hidden><img alt=""></div>
+<button id="btt" type="button" aria-label="Back to top"><i class="fa-solid fa-arrow-up"></i></button>
+
+<script>
+const lb = document.getElementById('lightbox'), lbImg = lb.querySelector('img');
+document.querySelectorAll('.fig img').forEach(im => im.addEventListener('click', () => { lbImg.src = im.src; lbImg.alt = im.alt; lb.hidden = false; }));
+lb.addEventListener('click', () => { lb.hidden = true; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') lb.hidden = true; });
+const btt = document.getElementById('btt');
+addEventListener('scroll', () => btt.classList.toggle('show', scrollY > 600), { passive: true });
+btt.addEventListener('click', () => scrollTo({ top: 0 }));
+document.getElementById('copybib').addEventListener('click', async e => {
+  const label = e.currentTarget.querySelector('span');
+  try { await navigator.clipboard.writeText(document.getElementById('bibtext').textContent); label.textContent = 'Copied'; }
+  catch (err) { label.textContent = 'Select to copy'; }
+  setTimeout(() => { label.textContent = 'Copy'; }, 1800);
+});
+</script>
+</body>
+</html>
