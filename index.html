@@ -75,8 +75,8 @@ section { padding-block: 56px; }
 
 /* teaser */
 .teaser-sec { padding-block: 8px 48px; }
-.teaser-gif { display: block; margin-inline: auto; width: 100%; max-width: 768px; height: auto; border-radius: 12px; box-shadow: var(--shadow); background: #ffffff; }
-.teaser-cap { margin: 12px auto 0; max-width: 768px; text-align: center; font-size: 0.9rem; color: var(--muted); }
+.hero-video { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; box-shadow: var(--shadow); background: #0c0f14; border: 1px solid var(--line); }
+.teaser-cap { margin: 12px auto 0; max-width: 860px; text-align: center; font-size: 0.9rem; color: var(--muted); }
 .lede { margin: 26px auto 0; max-width: 860px; text-align: center; font: 400 1.32rem/1.55 var(--display); color: var(--ink); }
 .lede em { font-style: normal; color: var(--accent); font-weight: 500; }
 
@@ -189,9 +189,11 @@ footer { padding-block: 34px 48px; text-align: center; font-size: 0.85rem; color
 </header>
 
 <section class="teaser-sec">
+  <div class="wrap wide">
+    <video class="hero-video" autoplay muted loop playsinline controls preload="auto" poster="static/videos/poster_motivation.jpg"><source src="static/videos/DriveOddsBench_0_motivation.mp4" type="video/mp4"></video>
+  </div>
   <div class="wrap">
-    <img class="teaser-gif" src="static/images/teaser_orbis2.gif" width="768" height="322" alt="A test history from Argoverse 2 continued to 4 s: the real future, in which the lead vehicle braked, and five of the 16 futures that Orbis 2 imagines.">
-    <p class="teaser-cap">A test history from Argoverse 2. The lead vehicle braked (red frame), and none of the 16 futures that Orbis 2 imagines did; five are shown.</p>
+    <p class="teaser-cap">One test history from Argoverse 2: the lead car slows down, and all 16 futures that Epona imagines have it pulling away. The 3D view shows the odds the model gives each gap over time, and where reality went.</p>
     <h2 class="lede">A world model's samples are <em>aligned with real-world odds</em> when each future appears among them as often as it follows the same history in reality. On real driving footage, <em>none of eleven models is aligned</em>, and every one underestimates its uncertainty.</h2>
   </div>
 </section>
